@@ -10,3 +10,5 @@ playwright-report/
 .DS_Store
 .dev-logs/
 .home/
+.tmp/
+test/e2e/.fixtures/

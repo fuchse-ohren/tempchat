@@ -1,6 +1,10 @@
 /** チャット画面（FR-3〜FR-7 の実装中核 / 設計 §6.4・§7.2） */
 
-import { base64ToBytes, bytesToBase64 } from "../../shared/bytes.ts";
+import {
+  base64ToBytes,
+  bytesToBase64,
+  bytesToBase64Url,
+} from "../../shared/bytes.ts";
 import {
   decodeMessage,
   encodeMessage,
@@ -113,7 +117,11 @@ export async function renderChat(
   }
 
   // ---------- 招待パネル（設計 §7.1） ----------
-  const inviteLink = location.href;
+  // FR-1.2 の招待リンク形式を常に守るため、現在の URL ではなく
+  // K_R（IndexedDB 保持分）から組み立て直す。
+  // 再訪時は location.href にフラグメントが含まれないため、
+  // そのまま共有すると招待相手の参加が不可能になっていた。
+  const inviteLink = `${location.origin}/${roomId}#${bytesToBase64Url(room.kr)}`;
   const invitePanel = h(
     "div",
     { class: "panel-body" },
@@ -271,14 +279,27 @@ export async function renderChat(
   );
 
   // ---------- 描画 ----------
-  function render(): void {
+  /**
+   * 一覧を描画する。
+   * `stick` は「自分の送信・初回の履歴描画」のときだけ true を渡す。
+   * ポーリングでの新着は現在のスクロール位置を維持する
+   * （過去を遡って読んでいるときに、新着で勝手に最新へスクロールさせない）。
+   */
+  let painted = false;
+  function render(stick = false): void {
+    const prevTop = listEl.scrollTop;
     const items = [...messages.values()].sort(
       (a, b) => a.ts - b.ts || a.rowid - b.rowid,
     );
     const frag = document.createDocumentFragment();
     for (const m of items) frag.append(renderItem(m));
     listEl.replaceChildren(frag);
-    listEl.scrollTop = listEl.scrollHeight;
+    if (stick || !painted) {
+      listEl.scrollTop = listEl.scrollHeight;
+    } else {
+      listEl.scrollTop = prevTop;
+    }
+    if (items.length > 0) painted = true;
     for (const m of items) {
       if (m.kind === "image" && !m.image?.bytes) void loadImage(m.rowid);
     }
@@ -296,7 +317,11 @@ export async function renderChat(
       { class: "msg-head" },
       h("strong", { class: "msg-name" }, m.name),
       h("span", { class: "msg-time" }, time),
-      m.pending ? h("span", { class: "msg-flag" }, "送信中…") : null,
+      m.failed
+        ? h("span", { class: "msg-flag msg-flag-fail" }, "送信失敗") // 設計 §6.3
+        : m.pending
+          ? h("span", { class: "msg-flag" }, "送信中…")
+          : null,
     );
     let bodyEl: HTMLElement;
     if (m.kind === "text") {
@@ -318,7 +343,12 @@ export async function renderChat(
     } else {
       bodyEl = h("p", { class: "msg-text sub" }, "画像を読み込み中…");
     }
-    return h("li", { class: m.rowid < 0 ? "msg pending" : "msg" }, head, bodyEl);
+    return h(
+      "li",
+      { class: m.failed ? "msg pending failed" : m.rowid < 0 ? "msg pending" : "msg" },
+      head,
+      bodyEl,
+    );
   }
 
   // ---------- 復号 ----------
@@ -403,12 +433,19 @@ export async function renderChat(
   }
 
   // ---------- 送信 ----------
+  /** pending の一時ID（負数）。短時間に連続送信しても衝突しないよう連番を混ぜる */
+  let tempSeq = 0;
+  const nextTempId = (): number => {
+    tempSeq = (tempSeq + 1) % 1000;
+    return -(Date.now() * 1000 + tempSeq);
+  };
+
   async function encryptWire(wire: WireMessage): Promise<string> {
     const key = await deriveMessageKey(room.kr, room.pin, wire.ts);
     return bytesToBase64(await encryptMessage(key, wire.ts, encodeMessage(wire)));
   }
 
-  async function sendWire(wire: WireMessage, tempId: number): Promise<void> {
+  async function sendWire(wire: WireMessage, tempId: number): Promise<boolean> {
     try {
       const ct = await encryptWire(wire);
       const { id } = await api.postMessage(roomId, auth, {
@@ -426,24 +463,40 @@ export async function renderChat(
         room.lastId = id;
         await roomPut(room);
       }
+      return true;
     } catch (e) {
-      await msgDelete(roomId, tempId);
-      messages.delete(tempId);
+      // 設計 §6.3: pending は消さず「送信失敗」として残す（手で再送できる状態にする）
+      const rec = messages.get(tempId);
+      if (rec) {
+        rec.failed = true;
+        messages.set(tempId, rec);
+        await msgPut(rec);
+      }
       sendNote.textContent =
         e instanceof ApiError && (e.status === 403 || e.status === 404)
           ? "ルームに参加できない状態です。ページを開き直してください"
           : "送信に失敗しました。時間をおいて再試行してください";
       sendNote.hidden = false;
+      return false;
     } finally {
-      render();
+      render(true);
+    }
+  }
+
+  /** 前回失敗した pending を片付ける（手で再送したときに同じ内容が二重に残らないようにする） */
+  async function dropFailed(): Promise<void> {
+    for (const [rowid, rec] of [...messages]) {
+      if (rec.failed) {
+        messages.delete(rowid);
+        await msgDelete(roomId, rowid);
+      }
     }
   }
 
   async function sendText(): Promise<void> {
-    const body = textarea.value.trim();
+    const draft = textarea.value;
+    const body = draft.trim();
     if (!isText(body)) return;
-    textarea.value = "";
-    counter.textContent = `0/${TEXT_MAX}`;
     sendNote.hidden = true;
     const wire: WireMessage = {
       v: PROTOCOL_VERSION,
@@ -453,13 +506,20 @@ export async function renderChat(
       ts: Date.now(),
       body,
     };
-    const tempId = -Date.now();
+    await dropFailed();
+    const tempId = nextTempId();
     const rec = wireToRecord(tempId, wire);
     rec.pending = true;
     messages.set(tempId, rec);
     await msgPut(rec);
-    render();
-    await sendWire(wire, tempId);
+    render(true);
+    const sent = await sendWire(wire, tempId);
+    // 設計 §6.3 の「失敗時は手で再送」を満たすため、下書きは送信成功時のみ消す
+    // （失敗して本文が捨てられると、書き直しができず再送できないため）
+    if (sent && textarea.value === draft) {
+      textarea.value = "";
+      counter.textContent = `0/${TEXT_MAX}`;
+    }
   }
 
   async function sendImage(file: File): Promise<void> {
@@ -484,12 +544,13 @@ export async function renderChat(
         n: compressed.fileName,
       },
     };
-    const tempId = -Date.now();
+    await dropFailed();
+    const tempId = nextTempId();
     const rec = wireToRecord(tempId, wire);
     rec.pending = true;
     messages.set(tempId, rec);
     await msgPut(rec);
-    render();
+    render(true);
     await sendWire(wire, tempId);
   }
 
@@ -528,7 +589,7 @@ export async function renderChat(
   };
 
   poller = startPolling(doSync);
-  render();
+  render(true);
 
   if (notifySupported() && Notification.permission === "granted") {
     void ensureSubscription(room, auth).then(

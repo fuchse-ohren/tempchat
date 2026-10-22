@@ -219,6 +219,10 @@ body {
 .msg-flag {
   color: var(--muted);
 }
+.msg-flag-fail {
+  color: var(--danger);
+  font-weight: 600;
+}
 .msg-text {
   margin: 0;
   overflow-wrap: anywhere;

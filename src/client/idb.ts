@@ -25,6 +25,8 @@ export interface StoredMessage {
   image?: { mime: string; bytes?: ArrayBuffer; fileName: string };
   receivedAt: number;
   pending?: boolean;
+  /** 送信失敗した pending（設計 §6.3「送信失敗」表示。再読込時は pending として掃除） */
+  failed?: boolean;
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null;

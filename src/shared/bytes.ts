@@ -65,8 +65,11 @@ export function bytesToHex(bytes: Uint8Array): string {
   return out;
 }
 
+const HEX_RE = /^[0-9a-fA-F]*$/;
+
+/** 不正文字列は null を返す（Number.parseInt の符号・空白・前置許容を避ける） */
 export function hexToBytes(hex: string): Uint8Array<ArrayBuffer> | null {
-  if (hex.length % 2 !== 0) return null;
+  if (hex.length % 2 !== 0 || !HEX_RE.test(hex)) return null;
   const out = new Uint8Array(hex.length / 2);
   for (let i = 0; i < out.length; i++) {
     const v = Number.parseInt(hex.slice(i * 2, i * 2 + 2), 16);

@@ -84,7 +84,7 @@ export function renderJoin(
       onDone();
     } catch (e) {
       if (e instanceof ApiError && e.status === 403) {
-        error.textContent = "PINが正しくありません";
+        error.textContent = "招待リンクまたはPINが正しくありません";
       } else if (e instanceof ApiError && e.status === 404) {
         error.textContent = "ルームが存在しないか、削除されています";
       } else {
