@@ -85,7 +85,7 @@ function px(u, v, size) {
   const samples = [];
   for (let dy = -1; dy <= 1; dy++) {
     for (let dx = -1; dx <= 1; dx++) {
-      samples.push(colorAt((u + dx / 3) * size, (v + dy / 3) * size));
+      samples.push(colorAt(u + dx / 3, v + dy / 3));
     }
   }
   return mix(samples);
