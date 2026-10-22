@@ -1,0 +1,21 @@
+name = "tempchat"
+main = "src/worker/index.ts"
+compatibility_date = "2026-10-01"
+compatibility_flags = ["nodejs_compat"]
+
+[assets]
+directory = "dist/client"
+not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "tempchat"
+# デプロイ時に `wrangler d1 create tempchat` で得たIDへ差し替える（ローカル開発ではダミー値で動作）
+database_id = "00000000-0000-0000-0000-000000000000"
+
+[dev]
+port = 8787
+
+[triggers]
+crons = ["*/30 * * * *"]

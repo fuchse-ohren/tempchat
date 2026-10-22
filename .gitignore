@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.wrangler/
+.npm-cache/
+.dev.vars
+test-results/
+playwright-report/
+.e2e-state/
+*.tsbuildinfo
+.DS_Store
+.dev-logs/
+.home/

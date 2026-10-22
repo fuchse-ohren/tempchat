@@ -1,0 +1,314 @@
+/* tempchat — モバイルファースト / CSS変数テーマ（設計 §7.4） */
+
+:root {
+  --bg: #f5f7fa;
+  --surface: #ffffff;
+  --text: #17202a;
+  --muted: #5d6b7a;
+  --accent: #4f7cff;
+  --accent-ink: #ffffff;
+  --danger: #c0392b;
+  --border: #dde3ea;
+  --msg-mine: #e3ecff;
+  --msg-other: #ffffff;
+  --banner: #fdecea;
+}
+[data-theme="dark"] {
+  --bg: #101418;
+  --surface: #1a2129;
+  --text: #e8edf2;
+  --muted: #93a1b0;
+  --accent: #6a90ff;
+  --accent-ink: #0e1319;
+  --danger: #e74c3c;
+  --border: #2b3540;
+  --msg-mine: #26395e;
+  --msg-other: #1f2731;
+  --banner: #4a1f1a;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP",
+    sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+}
+.app {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.loading {
+  margin: auto;
+  color: var(--muted);
+}
+
+/* ---- 共通部品 ---- */
+.screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  width: 100%;
+  max-width: 420px;
+}
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.title {
+  margin: 0;
+  font-size: 22px;
+}
+.sub {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0;
+}
+.err {
+  color: var(--danger);
+  font-size: 13px;
+  margin: 0;
+}
+.code {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-family: ui-monospace, monospace;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+}
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.row .input {
+  flex: 1;
+}
+.btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  border-radius: 10px;
+  padding: 9px 14px;
+  font: inherit;
+  cursor: pointer;
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.btn-ghost {
+  border-color: transparent;
+  background: transparent;
+  color: var(--accent);
+}
+.pin-input {
+  font-family: ui-monospace, monospace;
+  font-size: 18px;
+  letter-spacing: 0.2em;
+}
+.hidden-file {
+  display: none;
+}
+
+/* ---- チャット ---- */
+.chat-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+}
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.brand {
+  font-weight: 700;
+}
+.header-actions {
+  display: flex;
+  gap: 4px;
+}
+.banner {
+  background: var(--banner);
+  padding: 8px 14px;
+  font-size: 13px;
+}
+.messages {
+  flex: 1;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.msg {
+  background: var(--msg-other);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  max-width: min(85%, 560px);
+}
+.msg.pending {
+  opacity: 0.6;
+}
+.msg-head {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 12px;
+  margin-bottom: 2px;
+}
+.msg-name {
+  color: var(--accent);
+}
+.msg-time {
+  color: var(--muted);
+}
+.msg-flag {
+  color: var(--muted);
+}
+.msg-text {
+  margin: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+.msg-image {
+  max-width: 100%;
+  max-height: 320px;
+  border-radius: 8px;
+  display: block;
+}
+.msg-file {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+/* ---- 送信欄 ---- */
+.composer {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 8px 12px calc(8px + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.composer-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+}
+.composer-input {
+  resize: none;
+  min-height: 44px;
+  max-height: 120px;
+  flex: 1;
+}
+.composer-actions {
+  align-items: center;
+  justify-content: flex-end;
+}
+.counter {
+  margin-right: auto;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---- パネル（招待・設定） ---- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 10;
+}
+.panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  max-height: 75dvh;
+  overflow-y: auto;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+  z-index: 11;
+}
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+@media (min-width: 700px) {
+  .messages {
+    padding: 18px calc(50vw - 320px);
+  }
+  .panel {
+    left: auto;
+    right: 16px;
+    bottom: 16px;
+    width: 420px;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+  }
+}

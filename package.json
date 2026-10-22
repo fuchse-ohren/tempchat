@@ -1,0 +1,42 @@
+{
+  "name": "tempchat",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev:api": "wrangler dev --local --port 8787",
+    "dev:web": "vite",
+    "dev": "concurrently -n api,web \"npm run dev:api\" \"npm run dev:web\"",
+    "build:sw": "vite build --config vite.sw.config.ts",
+    "build": "vite build && npm run build:sw",
+    "typecheck": "tsc --noEmit",
+    "db:migrate:local": "wrangler d1 migrations apply tempchat --local",
+    "db:migrate:remote": "wrangler d1 migrations apply tempchat --remote",
+    "preview": "wrangler dev --local",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "vapid:gen": "web-push generate-vapid-keys"
+  },
+  "dependencies": {
+    "cbor2": "^2.4.0",
+    "web-push": "^3.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.23.0",
+    "@cloudflare/workers-types": "^5.20261022.1",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.0.0",
+    "@types/web-push": "^3.6.4",
+    "concurrently": "^9.0.0",
+    "typescript": "^5.9.0",
+    "vite": "^7.0.0",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.151.3"
+  },
+  "allowScripts": {
+    "esbuild@0.28.1": true,
+    "esbuild@0.28.2": true,
+    "workerd@1.20260815.1": true,
+    "workerd@1.20261019.1": true
+  }
+}

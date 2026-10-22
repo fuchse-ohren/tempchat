@@ -1,0 +1,5 @@
+# VAPID鍵は `npm run vapid:gen` で生成し、`wrangler secret put` で登録する。
+# ローカル開発では .dev.vars に同じキー名で置く。
+VAPID_PUBLIC_KEY=
+VAPID_PRIVATE_KEY=
+VAPID_SUBJECT=mailto:dev@example.com

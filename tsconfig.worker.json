@@ -1,0 +1,27 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "lib": [
+      "ES2022"
+    ],
+    "types": [
+      "@cloudflare/workers-types",
+      "node"
+    ],
+    "skipLibCheck": true,
+    "noEmit": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowImportingTsExtensions": true
+  },
+  "include": [
+    "src/worker/**/*",
+    "src/shared/**/*",
+    "wrangler.d.ts"
+  ]
+}
