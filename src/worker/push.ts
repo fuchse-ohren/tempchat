@@ -66,6 +66,21 @@ export async function sendPush(
           .run();
       }
       // その他（一時的障害）は何もしない。平文・鍵はログに出さない
+      const err = e as {
+        name?: string;
+        message?: string;
+        statusCode?: number;
+        code?: string;
+      };
+
+      console.error("push_send_failed", {
+        name: err?.name,
+        statusCode: err?.statusCode,
+        code: err?.code,
+        message: (err?.message ?? "")
+          .replace(/https?:\/\/\S+/g, "[redacted-url]")
+          .slice(0, 200),
+      });
     }
   }
 }
